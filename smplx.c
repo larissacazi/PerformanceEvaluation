@@ -533,20 +533,16 @@ void release(char *nome_recurso,int token)
  
  ponteiro_cab = cabecalho_descritor;
 
- printf("ponteiro_cab = %d, nome_recurso = %s, ponteiro_cab->pont_descritor->nome = %s\n", *ponteiro_cab, nome_recurso, ponteiro_cab->pont_descritor->nome);
-
 
  /* procura pelo recurso identificado por nome_recurso */
  
- while(ponteiro_cab != NULL && strcmp(ponteiro_cab->pont_descritor->nome, nome_recurso)) {
-    printf("Entrada nome_recurso = %s, ponteiro_cab->pont_descritor->nome = %s\n", nome_recurso, ponteiro_cab->pont_descritor->nome);
-    ponteiro_cab = ponteiro_cab->prox_cabecalho;
-    printf("Passou: ponteiro_cab->prox_cabecalho = %d\n", *(ponteiro_cab->prox_cabecalho));
- }
+ while ( (ponteiro_cab != NULL) && 
+         (strcmp(ponteiro_cab->pont_descritor->nome,nome_recurso)) )
+   ponteiro_cab = ponteiro_cab->prox_cabecalho;
                 
- printf("ponteiro_cab = %d\n", *ponteiro_cab);
- if(ponteiro_cab == NULL)
-   erro("Rotina: release() - Erro1: recurso nao encontrado para ser liberado");
+  
+ if (ponteiro_cab == NULL)
+   erro("Rotina: release() - Erro: recurso nao encontrado para ser liberado");
    
    
  /*recurso encontrado - busca pelo servidor associado ao token 
@@ -558,7 +554,7 @@ void release(char *nome_recurso,int token)
    ponteiro_serv_rec = ponteiro_serv_rec->prox_servidor_recursos;
  
  if (ponteiro_serv_rec == NULL) /* nao existe servidor do recurso associado ao token */
-   erro("Rotina: release() - Erro2: nao existe servidor associado ao token");
+   erro("Rotina: release() - Erro: nao existe servidor associado ao token");
    
  /* servidor encontrado - sera liberado - o no permanece, os dados sao apagados */
  
@@ -612,7 +608,7 @@ void release(char *nome_recurso,int token)
     /* atualiza campos da fila de eventos para a lista de eventos futuros do processo */
     ponteiro_lista_eventos = aloca_mem_lista_eventos_futuros();
     if (ponteiro_lista_eventos == NULL)
-      erro("Rotina: release() - Erro3: alocar memoria para a lista de eventos futuros");
+      erro("Rotina: release() - Erro: alocar memoria para a lista de eventos futuros");
     
     /*ponteiro_lista_eventos->ident_processo = proc_local;*/
     

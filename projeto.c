@@ -43,8 +43,9 @@ int typeCount = 0;
 int timeCount = 0;
   
 float
-	tc[2]={5.0, 10.0},  /* class 0,1 mean cpu times: dynamic takes 2 times longer than static to process. */
+	tc[2]={5.0, 7.0},  /* class 0,1 mean cpu times: dynamic takes 2 times longer than static to process. */
 	td=30.0, sd=7.5;   /* disk time mean, std. dev. */
+float tDisk[2] = {10.0, 15.0};
 
 FILE *arq, *saida;
 
@@ -148,7 +149,8 @@ void main(int argc, char** argv) {
 
 	while((time() < Te)) {
 
-	    cause(&Event,&i);
+	    cause(&Event, &i);
+	    printf("Event %d i %d\n", Event, i);
 
 	    pTask = &task[i];
 
@@ -156,7 +158,7 @@ void main(int argc, char** argv) {
 	        case 1 : //
 	          schedule(2, 0.0, i);
 	          pTask->tsStart = time();
-	          schedule(3, expntl(Ta0), nextTask);
+	          schedule(1, expntl(Ta0), nextTask);
 	          break;
 
 	        /*  centro de serviço = Escalonador */
@@ -164,17 +166,18 @@ void main(int argc, char** argv) {
 	        	printf("Case 2:: Escalonador::Entrada.\n");
 	        	j = pTask->type;
 	        	if(request("Escalonador", Event, i, 0) == 0) {
-	            	float release_CPU = expntl(tc[j]);
+	            	float releaseScheduler = expntl(tc[j]);
+	            	printf("i %d\n", i);
 
 	             	if(opt == 1) schedule(3, timefromfile(entr), i);
-					else schedule(3, release_CPU, i);
+					else schedule(3, releaseScheduler, i);
 
-	             	printf("Case 2:: Escalonador::Schedule.\n");
+	             	printf("Case 2:: Escalonador::Schedule. i %d\n", i);
 	          	}
 	          	break;
 
 	        case 3 : 
-	        	printf("Case 3:: Escalonador::Release.\n");
+	        	printf("Case 3:: Escalonador::Release. i %d\n", i);
 				release("Escalonador", i);
 
 				Aleatorio = randompar(1, 10000);
@@ -193,10 +196,10 @@ void main(int argc, char** argv) {
 	        	printf("Case 4:: CPU0::Entrada.\n");
 	        	if(pTask->diskAccess == FALSE) {
 		        	if(request("CPU0", Event, i, 0) == 0) {
-		        		float release_CPU = expntl(tc[pTask->type]);
+		        		float releaseCPU = expntl(tc[pTask->type]);
 
 		        		if(opt == 1) schedule(5, timefromfile(entr), i);
-						else schedule(5, release_CPU, i);
+						else schedule(5, releaseCPU, i);
 
 		            	pTask->server = 0;
 		            	printf("Case 4:: CPU0::Schedule.\n");
@@ -220,8 +223,11 @@ void main(int argc, char** argv) {
 	        	printf("Case 8:: CPU1::Entrada.\n");
 	        	if(pTask->diskAccess == FALSE) {
 		        	if(request("CPU1", Event, i, 0) == 0) {
+		        		float releaseCPU = expntl(tc[pTask->type]);
+
 		        		if(opt == 1) schedule(9, timefromfile(entr), i);
-		            	else schedule(9, expntl(Ts3), i);
+						else schedule(9, releaseCPU, i);
+
 		            	pTask->server = 1;
 		            	printf("Case 8:: CPU1::Schedule.\n");
 		        	}
@@ -244,9 +250,10 @@ void main(int argc, char** argv) {
 	        	printf("Case 12:: CPU2::Entrada.\n");
 	        	if(pTask->diskAccess == FALSE) {
 		        	if(request("CPU2", Event, i, 0) == 0) {
+		        		float releaseCPU = expntl(tc[pTask->type]);
 
-		            	if(opt == 1) schedule(13, timefromfile(entr), i);
-		            	else schedule(13, expntl(Ts5), i);
+		        		if(opt == 1) schedule(13, timefromfile(entr), i);
+						else schedule(13, releaseCPU, i);
 
 		            	pTask->server = 2;
 		            	printf("Case 12:: CPU2::Schedule.\n");
@@ -270,8 +277,11 @@ void main(int argc, char** argv) {
 	        	printf("Case 16: CPU3::Entrada.\n");
 	        	if(pTask->diskAccess == FALSE) {
 		        	if(request("CPU3", Event, i, 0) == 0) {
-		            	if(opt == 1) schedule(17, timefromfile(entr), i);
-		            	else schedule(17, expntl(Ts7), i);
+		        		float releaseCPU = expntl(tc[pTask->type]);
+
+		        		if(opt == 1) schedule(17, timefromfile(entr), i);
+						else schedule(17, releaseCPU, i);
+
 		            	pTask->server = 3;
 		            	printf("Case 16:: CPU3::Release.\n");
 		        	}
@@ -291,12 +301,15 @@ void main(int argc, char** argv) {
 
 	        /*  centro de serviço = Disco0 */
 	        case 6 : 
-	        	printf("Case 6:: Disco0::Entrada.\n");
-				if(request("Disco0", Event, i, 0) == 0) {
-				 if(opt == 1) schedule(7, timefromfile(entr), i);
-				 else schedule(7, expntl(Ts2), i);
-				 pTask->diskAccess = TRUE;
-				}
+				printf("Case 6:: Disco0::Entrada.\n");
+					if(request("Disco0", Event, i, 0) == 0) {
+						float releaseDisk = expntl(tDisk[pTask->type]);
+
+		        		if(opt == 1) schedule(7, timefromfile(entr), i);
+						else schedule(7, releaseDisk, i);
+
+						pTask->diskAccess = TRUE;
+					}
 				break;
 	        case 7 : 
 	        	printf("Case 7:: Disco0::Release.\n");
@@ -308,8 +321,11 @@ void main(int argc, char** argv) {
 	        case 10 : 
 	        	printf("Case 10:: Disco1::Entrada.\n");
 	        	if(request("Disco1", Event, i, 0) == 0) {
-	            	if(opt == 1) schedule(11, timefromfile(entr), i);
-	            	else schedule(11, expntl(Ts4), i);
+	        		float releaseDisk = expntl(tDisk[pTask->type]);
+
+	        		if(opt == 1) schedule(11, timefromfile(entr), i);
+					else schedule(11, releaseDisk, i);
+
 	            	pTask->diskAccess = TRUE;
 	          	}
 	          	break;
@@ -323,8 +339,11 @@ void main(int argc, char** argv) {
 	        case 14 :
 	        	printf("Case 14:: Disco2::Entrada.\n");
 	        	if(request("Disco2", Event, i, 0) == 0) {
-	            	if(opt == 1) schedule(15, timefromfile(entr), i);
-	            	else schedule(15, expntl(Ts6), i);
+	        		float releaseDisk = expntl(tDisk[pTask->type]);
+
+	        		if(opt == 1) schedule(15, timefromfile(entr), i);
+					else schedule(15, releaseDisk, i);
+ 
 	            	pTask->diskAccess = TRUE;
 	          	}
 	          	break;
@@ -338,8 +357,11 @@ void main(int argc, char** argv) {
 	        case 18 : 
 	        	printf("Case 18:: Disco3::Entrada.\n");
 	        	if(request("Disco3", Event, i, 0) == 0) {
-	            	if(opt == 1) schedule(19, timefromfile(entr), i);
-	            	else schedule(19, expntl(Ts8), i);
+	        		float releaseDisk = expntl(tDisk[pTask->type]);
+
+	        		if(opt == 1) schedule(19, timefromfile(entr), i);
+					else schedule(19, releaseDisk, i);
+ 
 	            	pTask->diskAccess = TRUE;
 	          	}
 	          	break;
