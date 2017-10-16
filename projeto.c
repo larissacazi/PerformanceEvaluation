@@ -4,6 +4,7 @@ C�digo gerado com o ASDA - Ambiente de Simula��o Distribu�da Autom�tic
 #include <stdio.h>
 #include "smplx.h"
 #include "randpar.h"
+#include <stdlib.h>
 
 #define n0 6         /* number of class 0 tasks  */
 #define n1 3         /* number of class 1 tasks  */
@@ -37,6 +38,9 @@ struct client {
 
 // float Te = 1000;  // para parar a simulação por tempo
 int nts = 1000;	// number of tours to simulate
+
+int typeCount = 0;
+int timeCount = 0;
   
 float
 	tc[2]={5.0, 10.0},  /* class 0,1 mean cpu times: dynamic takes 2 times longer than static to process. */
@@ -56,22 +60,68 @@ void initializeClients() {
 	}
 }
 
-void main(void) {
-	 /* definicoes */
-	 float Te = 10000;
-	 int Event = 1, Aleatorio;
-	 float Ta0 = 5, Ts0 = 4, Ts1 = 5, Ts2 = 6, Ts3 = 7, Ts4 = 5, Ts5 = 4, Ts6 = 5, Ts7 = 4, Ts8 = 5;
-	 int i = 0, j = 0;
-	 int nextTask = randompar(0, 3);
+double timefromfile(FILE* arq){
+	
+	double time;
 
-	 struct client *pTask;
+	fseek(arq, timeCount*(sizeof(double)+sizeof(int)), SEEK_SET);
 
-	 FILE *p, *saida;
-	 saida = fopen("Projeto.out","w");
+	fread(&time, sizeof(double), 1, arq);
 
-	 if ((p = sendto(saida)) == NULL)
-	    printf("Erro na saida \n");
+	timeCount++;
 
+	return time;
+
+}
+
+int typefromfile(FILE* arq){
+	
+	int type;
+
+	fseek(arq, (sizeof(double)+typeCount*(sizeof(double)+sizeof(int))), SEEK_SET);
+
+	fread(&type, sizeof(int), 1, arq);
+
+	typeCount++;
+
+	return type;
+
+}
+
+void main(int argc, char** argv) {
+	/* definicoes */
+	float Te = 10000;
+	int Event = 1, Aleatorio;
+	float Ta0 = 5, Ts0 = 4, Ts1 = 5, Ts2 = 6, Ts3 = 7, Ts4 = 5, Ts5 = 4, Ts6 = 5, Ts7 = 4, Ts8 = 5;
+	int i = 0, j = 0, seed, opt;
+	int nextTask = randompar(0, 3);
+
+	struct client *pTask;
+
+	FILE *p, *saida, *entr;
+
+	if(argc != 3){
+		printf("Incorrect number of arguments. Exiting.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	//The seed to generate a random number
+	seed = atoi(argv[1]);
+	//Choose if it is taken from log or from some distribution
+	opt = atoi(argv[2]);
+
+	if(opt < 0 || opt > 1){
+		printf("Incorrect option for values source. Exiting.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	saida = fopen("Projeto.out","w");
+
+	if((p = sendto(saida)) == NULL)
+		printf("Erro na saida \n");
+
+	if(opt == 1)
+		entr = fopen("log.db", "rb+");
 
 	 //Prepare the system for simulation and name it
 	 smpl(0," Projeto");
@@ -90,11 +140,11 @@ void main(void) {
 
 	initializeClients();
 
-	schedule(1, 0.0, i);
-
 	//--------------------------------------------------------
  	/* Escalona a chegada do primeiro cliente */
-   	stream(10); //Colocar como parâmetro esse valor 10.
+   	stream(seed); //Colocar como parâmetro esse valor 10.
+
+   	schedule(1, 0.0, i);
 
 	while((time() < Te)) {
 
@@ -103,7 +153,7 @@ void main(void) {
 	    pTask = &task[i];
 
 	    switch(Event) {
-	        case 1 : // The 
+	        case 1 : //
 	          schedule(2, 0.0, i);
 	          pTask->tsStart = time();
 	          schedule(3, expntl(Ta0), nextTask);
@@ -115,7 +165,10 @@ void main(void) {
 	        	j = pTask->type;
 	        	if(request("Escalonador", Event, i, 0) == 0) {
 	            	float release_CPU = expntl(tc[j]);
-	             	schedule(3, release_CPU, i);
+
+	             	if(opt == 1) schedule(3, timefromfile(entr), i);
+					else schedule(3, release_CPU, i);
+
 	             	printf("Case 2:: Escalonador::Schedule.\n");
 	          	}
 	          	break;
@@ -141,7 +194,10 @@ void main(void) {
 	        	if(pTask->diskAccess == FALSE) {
 		        	if(request("CPU0", Event, i, 0) == 0) {
 		        		float release_CPU = expntl(tc[pTask->type]);
-		            	schedule(5, release_CPU, i);
+
+		        		if(opt == 1) schedule(5, timefromfile(entr), i);
+						else schedule(5, release_CPU, i);
+
 		            	pTask->server = 0;
 		            	printf("Case 4:: CPU0::Schedule.\n");
 		        	}
@@ -164,7 +220,8 @@ void main(void) {
 	        	printf("Case 8:: CPU1::Entrada.\n");
 	        	if(pTask->diskAccess == FALSE) {
 		        	if(request("CPU1", Event, i, 0) == 0) {
-		            	schedule(9, expntl(Ts3), i);
+		        		if(opt == 1) schedule(9, timefromfile(entr), i);
+		            	else schedule(9, expntl(Ts3), i);
 		            	pTask->server = 1;
 		            	printf("Case 8:: CPU1::Schedule.\n");
 		        	}
@@ -187,7 +244,10 @@ void main(void) {
 	        	printf("Case 12:: CPU2::Entrada.\n");
 	        	if(pTask->diskAccess == FALSE) {
 		        	if(request("CPU2", Event, i, 0) == 0) {
-		            	schedule(13, expntl(Ts5), i);
+
+		            	if(opt == 1) schedule(13, timefromfile(entr), i);
+		            	else schedule(13, expntl(Ts5), i);
+
 		            	pTask->server = 2;
 		            	printf("Case 12:: CPU2::Schedule.\n");
 		        	}
@@ -210,7 +270,8 @@ void main(void) {
 	        	printf("Case 16: CPU3::Entrada.\n");
 	        	if(pTask->diskAccess == FALSE) {
 		        	if(request("CPU3", Event, i, 0) == 0) {
-		            	schedule(17, expntl(Ts7), i);
+		            	if(opt == 1) schedule(17, timefromfile(entr), i);
+		            	else schedule(17, expntl(Ts7), i);
 		            	pTask->server = 3;
 		            	printf("Case 16:: CPU3::Release.\n");
 		        	}
@@ -232,7 +293,8 @@ void main(void) {
 	        case 6 : 
 	        	printf("Case 6:: Disco0::Entrada.\n");
 				if(request("Disco0", Event, i, 0) == 0) {
-				 schedule(7, expntl(Ts2), i);
+				 if(opt == 1) schedule(7, timefromfile(entr), i);
+				 else schedule(7, expntl(Ts2), i);
 				 pTask->diskAccess = TRUE;
 				}
 				break;
@@ -246,7 +308,8 @@ void main(void) {
 	        case 10 : 
 	        	printf("Case 10:: Disco1::Entrada.\n");
 	        	if(request("Disco1", Event, i, 0) == 0) {
-	            	schedule(11, expntl(Ts4), i);
+	            	if(opt == 1) schedule(11, timefromfile(entr), i);
+	            	else schedule(11, expntl(Ts4), i);
 	            	pTask->diskAccess = TRUE;
 	          	}
 	          	break;
@@ -260,7 +323,8 @@ void main(void) {
 	        case 14 :
 	        	printf("Case 14:: Disco2::Entrada.\n");
 	        	if(request("Disco2", Event, i, 0) == 0) {
-	            	schedule(15, expntl(Ts6), i);
+	            	if(opt == 1) schedule(15, timefromfile(entr), i);
+	            	else schedule(15, expntl(Ts6), i);
 	            	pTask->diskAccess = TRUE;
 	          	}
 	          	break;
@@ -274,7 +338,8 @@ void main(void) {
 	        case 18 : 
 	        	printf("Case 18:: Disco3::Entrada.\n");
 	        	if(request("Disco3", Event, i, 0) == 0) {
-	            	schedule(19, expntl(Ts8), i);
+	            	if(opt == 1) schedule(19, timefromfile(entr), i);
+	            	else schedule(19, expntl(Ts8), i);
 	            	pTask->diskAccess = TRUE;
 	          	}
 	          	break;

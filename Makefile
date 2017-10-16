@@ -1,7 +1,7 @@
 #Makefile
 IDIR=./
 CC=gcc
-CFLAGS=-I.
+CFLAGS=-I. -lm
 RM=rm -f
 
 DEPS=smplx.h declaracoes.h randpar.h
