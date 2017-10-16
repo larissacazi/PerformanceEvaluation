@@ -3,6 +3,7 @@ C�digo gerado com o ASDA - Ambiente de Simula��o Distribu�da Autom�tic
 --------------------------------------------------------------------------*/
 #include <stdio.h>
 #include "smplx.h"
+#include "randpar.h"
 
 #define n0 6         /* number of class 0 tasks  */
 #define n1 3         /* number of class 1 tasks  */
@@ -43,25 +44,37 @@ float
 
 FILE *arq, *saida;
 
+void initializeClients() {
+	int i = 0;
+
+	for(i=0; i<nt+1; i++) {
+		task[i].type = 0;
+		task[i].diskAccess = FALSE;
+		task[i].server = (nt + 1) % 4;
+		task[i].tsStart = 0;
+		task[i].tsEnd = 0;
+	}
+}
+
 void main(void) {
 	 /* definicoes */
 	 float Te = 10000;
 	 int Event = 1, Aleatorio;
 	 float Ta0 = 5, Ts0 = 4, Ts1 = 5, Ts2 = 6, Ts3 = 7, Ts4 = 5, Ts5 = 4, Ts6 = 5, Ts7 = 4, Ts8 = 5;
 	 int i = 0, j = 0;
-	 int nextTask = 1;
+	 int nextTask = randompar(0, 3);
 
 	 struct client *pTask;
 
 	 FILE *p, *saida;
-	 saida = fopen("NOME.out","w");
+	 saida = fopen("Projeto.out","w");
 
 	 if ((p = sendto(saida)) == NULL)
 	    printf("Erro na saida \n");
 
 
 	 //Prepare the system for simulation and name it
-	 smpl(0," NOME");
+	 smpl(0," Projeto");
 
 
 	//Create and name the facilities
@@ -75,12 +88,9 @@ void main(void) {
 	facility("CPU3", CPU3);
 	facility("Disco3", DISCO3);
 
-	//Schedule nt tasks.
-	for(i=0; i<nt; i++) {
-		schedule(1, 0.0, i); 
-	}
+	initializeClients();
 
-
+	schedule(1, 0.0, i);
 
 	//--------------------------------------------------------
  	/* Escalona a chegada do primeiro cliente */
@@ -101,34 +111,39 @@ void main(void) {
 
 	        /*  centro de serviço = Escalonador */
 	        case 2 : 
+	        	printf("Case 2:: Escalonador::Entrada.\n");
 	        	j = pTask->type;
 	        	if(request("Escalonador", Event, i, 0) == 0) {
 	            	float release_CPU = expntl(tc[j]);
 	             	schedule(3, release_CPU, i);
+	             	printf("Case 2:: Escalonador::Schedule.\n");
 	          	}
 	          	break;
 
 	        case 3 : 
-	          release("Escalonador", i);
+	        	printf("Case 3:: Escalonador::Release.\n");
+				release("Escalonador", i);
 
-	          Aleatorio = randompar(1, 10000);
-	          if(( 1 <= Aleatorio) && ( Aleatorio <= 2500) )
-	           schedule(4, 0.0, i);
-	          if (( 2501 <= Aleatorio) && ( Aleatorio <= 5000) )
-	           schedule(8, 0.0, i);
-	          if (( 5001 <= Aleatorio) && ( Aleatorio <= 7500) )
-	           schedule(12, 0.0, i);
-	          if (( 7501 <= Aleatorio) && ( Aleatorio <= 10000) )
-	           schedule(16, 0.0, i);
-	          break;
+				Aleatorio = randompar(1, 10000);
+				if(( 1 <= Aleatorio) && ( Aleatorio <= 2500) )
+				schedule(4, 0.0, i);
+				if (( 2501 <= Aleatorio) && ( Aleatorio <= 5000) )
+				schedule(8, 0.0, i);
+				if (( 5001 <= Aleatorio) && ( Aleatorio <= 7500) )
+				schedule(12, 0.0, i);
+				if (( 7501 <= Aleatorio) && ( Aleatorio <= 10000) )
+				schedule(16, 0.0, i);
+				break;
 
 	        /*  centro de serviço = CPU0 */
 	        case 4 :
+	        	printf("Case 4:: CPU0::Entrada.\n");
 	        	if(pTask->diskAccess == FALSE) {
 		        	if(request("CPU0", Event, i, 0) == 0) {
 		        		float release_CPU = expntl(tc[pTask->type]);
 		            	schedule(5, release_CPU, i);
 		            	pTask->server = 0;
+		            	printf("Case 4:: CPU0::Schedule.\n");
 		        	}
 		        }
 		        else {
@@ -136,19 +151,22 @@ void main(void) {
 		        }
 	          	break;
 	        case 5 : 
-	          release("CPU0", i);
-	          Aleatorio = randompar(1,10000);
-	          if (( 1 <= Aleatorio) && ( Aleatorio <= 5000) )
-	           schedule(6, 0.0, i);
-	          break;
+	        	printf("Case 5:: CPU0::Release.\n");
+				release("CPU0", i);
+				Aleatorio = randompar(1,10000);
+				if (( 1 <= Aleatorio) && ( Aleatorio <= 5000) )
+				schedule(6, 0.0, i);
+				break;
 
 
 	        /*  centro de serviço = CPU1 */
 	        case 8 :
+	        	printf("Case 8:: CPU1::Entrada.\n");
 	        	if(pTask->diskAccess == FALSE) {
 		        	if(request("CPU1", Event, i, 0) == 0) {
 		            	schedule(9, expntl(Ts3), i);
 		            	pTask->server = 1;
+		            	printf("Case 8:: CPU1::Schedule.\n");
 		        	}
 		        }
 		        else {
@@ -156,6 +174,7 @@ void main(void) {
 		        }
 	          	break;
 	        case 9 : 
+	        	printf("Case 9:: CPU1::Release.\n");
 	        	release("CPU1", i);
 	        	Aleatorio = randompar(1, 10000);
 	          	if (( 1 <= Aleatorio) && ( Aleatorio <= 5000) )
@@ -165,10 +184,12 @@ void main(void) {
 
 	        /*  centro de serviço = CPU2 */
 	        case 12 : 
+	        	printf("Case 12:: CPU2::Entrada.\n");
 	        	if(pTask->diskAccess == FALSE) {
 		        	if(request("CPU2", Event, i, 0) == 0) {
 		            	schedule(13, expntl(Ts5), i);
 		            	pTask->server = 2;
+		            	printf("Case 12:: CPU2::Schedule.\n");
 		        	}
 		        }
 		        else {
@@ -176,6 +197,7 @@ void main(void) {
 		        }
 	          	break;
 	        case 13 :
+	        	printf("Case 13:: CPU2::Release.\n");
 	        	release("CPU2", i);
 	        	Aleatorio = randompar(1, 10000);
 	          	if (( 1 <= Aleatorio) && ( Aleatorio <= 5000) )
@@ -185,10 +207,12 @@ void main(void) {
 
 	        /*  centro de serviço = CPU3 */
 	        case 16 : 
+	        	printf("Case 16: CPU3::Entrada.\n");
 	        	if(pTask->diskAccess == FALSE) {
 		        	if(request("CPU3", Event, i, 0) == 0) {
 		            	schedule(17, expntl(Ts7), i);
 		            	pTask->server = 3;
+		            	printf("Case 16:: CPU3::Release.\n");
 		        	}
 		        }
 		        else {
@@ -196,6 +220,7 @@ void main(void) {
 		        }
 	          	break;
 	        case 17 :
+	        	printf("Case 17:: CPU3::Release.\n");
 	        	release("CPU3", i);
 	        	Aleatorio = randompar(1, 10000);
 	          	if (( 1 <= Aleatorio) && ( Aleatorio <= 5000) )
@@ -205,51 +230,59 @@ void main(void) {
 
 	        /*  centro de serviço = Disco0 */
 	        case 6 : 
-	          if(request("Disco0", Event, i, 0) == 0) {
-	             schedule(7, expntl(Ts2), i);
-	             pTask->diskAccess = TRUE;
-	          }
-	          break;
+	        	printf("Case 6:: Disco0::Entrada.\n");
+				if(request("Disco0", Event, i, 0) == 0) {
+				 schedule(7, expntl(Ts2), i);
+				 pTask->diskAccess = TRUE;
+				}
+				break;
 	        case 7 : 
-	          release("Disco0", i);
-	             schedule(4, 0.0, i);
-	          break;
+	        	printf("Case 7:: Disco0::Release.\n");
+				release("Disco0", i);
+				schedule(4, 0.0, i);
+				break;
 
 	        /*  centro de serviço = Disco1 */
 	        case 10 : 
+	        	printf("Case 10:: Disco1::Entrada.\n");
 	        	if(request("Disco1", Event, i, 0) == 0) {
 	            	schedule(11, expntl(Ts4), i);
 	            	pTask->diskAccess = TRUE;
 	          	}
 	          	break;
 	        case 11 : 
-	          release("Disco1", i);
-	             schedule(8, 0.0, i);
-	          break;
+	        	printf("Case 11:: Disco1::Release.\n");
+				release("Disco1", i);
+				schedule(8, 0.0, i);
+				break;
 
 	        /*  centro de serviço = Disco2 */
 	        case 14 :
+	        	printf("Case 14:: Disco2::Entrada.\n");
 	        	if(request("Disco2", Event, i, 0) == 0) {
 	            	schedule(15, expntl(Ts6), i);
 	            	pTask->diskAccess = TRUE;
 	          	}
 	          	break;
 	        case 15 : 
-	          release("Disco2", i);
-	             schedule(12, 0.0, i);
-	          break;
+	        	printf("Case 15:: Disco2::Release.\n");
+				release("Disco2", i);
+				schedule(12, 0.0, i);
+				break;
 
 	        /*  centro de serviço = Disco3 */
 	        case 18 : 
+	        	printf("Case 18:: Disco3::Entrada.\n");
 	        	if(request("Disco3", Event, i, 0) == 0) {
 	            	schedule(19, expntl(Ts8), i);
 	            	pTask->diskAccess = TRUE;
 	          	}
 	          	break;
 	        case 19 : 
-	          release("Disco3", i);
-	             schedule(16, 0.0, i);
-	          break;
+	        	printf("Case 19:: Disco3::Release.\n");
+				release("Disco3", i);
+				schedule(16, 0.0, i);
+				break;
 		}
 	}
 
