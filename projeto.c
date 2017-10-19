@@ -6,9 +6,7 @@ C�digo gerado com o ASDA - Ambiente de Simula��o Distribu�da Autom�tic
 #include "randpar.h"
 #include <stdlib.h>
 
-#define MAX_REQUESTS 100     /* total number of tasks */
-#define nd 4         /* number of disk units  */
-#define qd 1         /* queued req. return */
+#define MAX_REQUESTS 8     /* total number of tasks */
 
 #define ESCALONADOR 	1
 #define CPU0			2	
@@ -32,7 +30,7 @@ struct client {
     int server;			/* Current server [0, 1, 2, 3]  */
     float tsStart;  	/* Start time stamp     */
     float tsEnd;		/* End time stamp     */
-} task[MAX_REQUESTS+50];
+} task[MAX_REQUESTS+10];
 
 // float Te = 1000;  // para parar a simulação por tempo
 int nts = 1000;	// number of tours to simulate
@@ -50,7 +48,7 @@ FILE *arq, *saida;
 void initializeClients() {
 	int i = 0;
 
-	for(i=0; i<MAX_REQUESTS; i++) {
+	for(i=0; i<MAX_REQUESTS+10; i++) {
 		task[i].type = 0;
 		task[i].diskAccess = FALSE;
 		task[i].server = 0;
@@ -92,7 +90,7 @@ void main(int argc, char** argv) {
 	float Te = 10000;
 	int Event = 1, Aleatorio;
 	float Ta0 = 5, Ts0 = 4, Ts1 = 5, Ts2 = 6, Ts3 = 7, Ts4 = 5, Ts5 = 4, Ts6 = 5, Ts7 = 4, Ts8 = 5;
-	int i = 0, j = 0, seed, opt;
+	int i = 0, j = 0, seed = 0, opt = 0;
 	int nextTask = 0;
 	int completedTasks = 0;
 
@@ -101,7 +99,7 @@ void main(int argc, char** argv) {
 	FILE *p, *saida, *entr;
 
 	if(argc != 3){
-		printf("Incorrect number of arguments. Exiting.\n");
+		//printf("Incorrect number of arguments. Exiting.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -111,7 +109,7 @@ void main(int argc, char** argv) {
 	opt = atoi(argv[2]);
 
 	if(opt < 0 || opt > 1){
-		printf("Incorrect option for values source. Exiting.\n");
+		//printf("Incorrect option for values source. Exiting.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -123,14 +121,12 @@ void main(int argc, char** argv) {
 		sprintf(outputFileName, "Projeto%d.out", seed);
 		saida = fopen(outputFileName,"w");
 
-		if((p = sendto(saida)) == NULL)
-			printf("Erro na saida \n");
+		if((p = sendto(saida)) == NULL) //printf("Erro na saida \n");
 
-		if(opt == 1)
-			entr = fopen("log.db", "rb+");
+		if(opt == 1) entr = fopen("log.db", "rb+");
 
-		 //Prepare the system for simulation and name it
-		 smpl(0," Projeto");
+		//Prepare the system for simulation and name it
+		smpl(0," Projeto");
 
 
 		//Create and name the facilities
@@ -155,44 +151,45 @@ void main(int argc, char** argv) {
 	   	completedTasks = 0;
 
 		//while((time() < Te)) {
-	   	while(completedTasks <= MAX_REQUESTS) {
+	   	while(completedTasks < MAX_REQUESTS - 1) {
 
-	   		printf("\n========= i %d\n", i);
+	   		////printf("\n========= i %d completedTasks %d\n", i, completedTasks);
 
 		    cause(&Event, &i);
-		    printf("Event %d i %d\n", Event, i);
+		    ////printf("Event %d i %d\n", Event, i);
 
 		    pTask = &task[i];
 
 		    switch(Event) {
-		        case 1 : //
+		        case 1 : 
 		          schedule(2, 0.0, i);
 		          pTask->tsStart = time(); 
-		          nextTask++; printf("nextTask %d\n", nextTask);
+		          nextTask++; 
+		          ////printf("i %d nextTask %d\n", i, nextTask);
 		          if(nextTask < MAX_REQUESTS) {
 		          	schedule(1, expntl(Ta0), nextTask);
 		          }
-		          break;
+		        break;
 
 		        /*  centro de serviço = Escalonador */
 		        case 2 : 
-		        	printf("Case 2:: Escalonador::Entrada.\n");
+		        	////printf("Case 2:: Escalonador::Entrada.\n");
 		        	j = pTask->type;
-		        	printf("j %d i %d\n", j, i);
+		        	////printf("j %d i %d\n", j, i);
 		        	if(request("Escalonador", Event, i, 0) == 0) {
 		            	float releaseScheduler = expntl(tc[j]);
-		            	printf("i %d\n", i);
+		            	////printf("i %d\n", i);
 
 		             	if(opt == 1) schedule(3, timefromfile(entr), i);
 						else schedule(3, releaseScheduler, i);
 
-		             	printf("Case 2:: Escalonador::Schedule. i %d\n", i);
+		             	////printf("Case 2:: Escalonador::Schedule. i %d\n", i);
 		          	}
-		          	printf("SAindo case2\n");
-		          	break;
+		          	////printf("SAindo case2\n");
+		        break;
 
 		        case 3 : 
-		        	printf("Case 3:: Escalonador::Release. i %d\n", i);
+		        	////printf("Case 3:: Escalonador::Release. i %d\n", i);
 					release("Escalonador", i);
 
 					Aleatorio = randompar(1, 10000);
@@ -204,44 +201,43 @@ void main(int argc, char** argv) {
 						schedule(12, 0.0, i);
 					if (( 7501 <= Aleatorio) && ( Aleatorio <= 10000) )
 						schedule(16, 0.0, i);
-					break;
+				break;
 
 		        /*  centro de serviço = CPU0 */
 		        case 4 :
-		        	printf("Case 4:: CPU0::Entrada.\n");
+		        	////printf("Case 4:: CPU0::Entrada.\n");
 		        	if(request("CPU0", Event, i, 0) == 0) {
-		        		printf("request CPU0\n");
+		        		////printf("request CPU0\n");
 		        		float releaseCPU = expntl(tc[pTask->type]);
 
 		        		if(opt == 1) schedule(5, timefromfile(entr), i);
 						else schedule(5, releaseCPU, i);
 
 		            	pTask->server = 0;
-		            	printf("Case 4:: CPU0::Schedule.\n");
+		            	////printf("Case 4:: CPU0::Schedule.\n");
 		        	}
-		        	printf("Case 4:: CPU0::Saida. Seed %d\n", seed);
-		          	break;
+		        	////printf("Case 4:: CPU0::Saida. Seed %d\n", seed);
+		        break;
 		        case 5 :
-		        	printf("Case 5: CPU0::Release.\n"); 
+		        	////printf("Case 5: CPU0::Release.\n"); 
 		        	if(pTask->diskAccess == FALSE) {
+		        		////printf("Case 5::Call Disco0. Disco0 was not accessed yet.\n");
 		        		schedule(6, 0.0, i);
 		        	}
 		        	else {
-		        		printf("Case 5:: CPU0::Release.\n");
+		        		////printf("Case 5:: CPU0::Release.\n");
 						release("CPU0", i);
 						pTask->tsEnd = time();
 			        	completedTasks++;
+			        	////printf("completedTasks!! i [%d] completedTasks [%d]\n", i, completedTasks);
 		        	}
-		        	
-					Aleatorio = randompar(1,10000);
-					if (( 1 <= Aleatorio) && ( Aleatorio <= 5000) )
 					
-					break;
+				break;
 
 
 		        /*  centro de serviço = CPU1 */
 		        case 8 :
-		        	printf("Case 8:: CPU1::Entrada.\n");
+		        	////printf("Case 8:: CPU1::Entrada.\n");
 		        	if(request("CPU1", Event, i, 0) == 0) {
 		        		float releaseCPU = expntl(tc[pTask->type]);
 
@@ -249,26 +245,27 @@ void main(int argc, char** argv) {
 						else schedule(9, releaseCPU, i);
 
 		            	pTask->server = 1;
-		            	printf("Case 8:: CPU1::Schedule.\n");
+		            	////printf("Case 8:: CPU1::Schedule.\n");
 		        	}
-		          	break;
+		        break;
 		        case 9 : 
-		        	printf("Case 9: CPU1::Release.\n");
+		        	////printf("Case 9: CPU1::Release.\n");
 		        	if(pTask->diskAccess == FALSE) {
 		        		schedule(10, 0.0, i);
 		        	}
 		        	else {
-		        		printf("Case 9:: CPU1::Release.\n");
+		        		////printf("Case 9:: CPU1::Release.\n");
 		        		release("CPU1", i);
 		        		pTask->tsEnd = time();
 			        	completedTasks++;
+			        	////printf("completedTasks!! i [%d] completedTasks [%d]\n", i, completedTasks);
 		        	}		           		
-		          	break;
+		        break;
 
 
 		        /*  centro de serviço = CPU2 */
 		        case 12 : 
-		        	printf("Case 12:: CPU2::Entrada.\n");
+		        	////printf("Case 12:: CPU2::Entrada.\n");
 		        	if(request("CPU2", Event, i, 0) == 0) {
 		        		float releaseCPU = expntl(tc[pTask->type]);
 
@@ -276,26 +273,27 @@ void main(int argc, char** argv) {
 						else schedule(13, releaseCPU, i);
 
 		            	pTask->server = 2;
-		            	printf("Case 12:: CPU2::Schedule.\n");
+		            	////printf("Case 12:: CPU2::Schedule.\n");
 		        	}
-		          	break;
+		        break;
 		        case 13 :
-		        	printf("Case 13: CPU2::Release.\n");
+		        	////printf("Case 13: CPU2::Release.\n");
 		        	if(pTask->diskAccess == FALSE) {
 		        		schedule(14, 0.0, i);
 		        	}
 		        	else {
-			        	printf("Case 13:: CPU2::Release. i %d\n", i);
+			        	////printf("Case 13:: CPU2::Release. i %d\n", i);
 			        	release("CPU2", i);
 			        	pTask->tsEnd = time();
 			        	completedTasks++;
+			        	////printf("completedTasks!! i [%d] completedTasks [%d]\n", i, completedTasks);
 			        }		           	
-		          	break;
+		        break;
 
 
 		        /*  centro de serviço = CPU3 */
 		        case 16 : 
-		        	printf("Case 16: CPU3::Entrada.\n");
+		        	////printf("Case 16: CPU3::Entrada.\n");
 		        	if(request("CPU3", Event, i, 0) == 0) {
 		        		float releaseCPU = expntl(tc[pTask->type]);
 
@@ -303,27 +301,28 @@ void main(int argc, char** argv) {
 						else schedule(17, releaseCPU, i);
 
 		            	pTask->server = 3;
-		            	printf("Case 16:: CPU3::Release.\n");
+		            	////printf("Case 16:: CPU3::Release.\n");
 		        	}
-		        	printf("Saida case 16\n");
-		          	break;
+		        	////printf("Saida case 16\n");
+		        break;
 		        case 17 :
-		        	printf("Case 17: CPU3::Release.\n");
+		        	////printf("Case 17: CPU3::Release.\n");
 		        	if(pTask->diskAccess == FALSE) {
 		        		schedule(18, 0.0, i);
 		        	}
 		        	else {
-		        		printf("Case 17:: CPU3::Release.\n");
+		        		////printf("Case 17:: CPU3::Release.\n");
 		        		release("CPU3", i);
 		        		pTask->tsEnd = time();
 			        	completedTasks++;
+			        	////printf("completedTasks!! i [%d] completedTasks [%d]\n", i, completedTasks);
 		        	}
-		          	break;
+		        break;
 
 
 		        /*  centro de serviço = Disco0 */
 		        case 6 : 
-					printf("Case 6:: Disco0::Entrada.\n");
+					////printf("Case 6:: Disco0::Entrada.\n");
 					if(request("Disco0", Event, i, 0) == 0) {
 						float releaseDisk = expntl(tDisk[pTask->type]);
 
@@ -332,16 +331,16 @@ void main(int argc, char** argv) {
 
 						pTask->diskAccess = TRUE;
 					}
-					break;
+				break;
 		        case 7 : 
-		        	printf("Case 7:: Disco0::Release.\n");
+		        	////printf("Case 7:: Disco0::Release.\n");
 					release("Disco0", i);
 					schedule(4, 0.0, i);
-					break;
+				break;
 
 		        /*  centro de serviço = Disco1 */
 		        case 10 : 
-		        	printf("Case 10:: Disco1::Entrada.\n");
+		        	//printf("Case 10:: Disco1::Entrada.\n");
 		        	if(request("Disco1", Event, i, 0) == 0) {
 		        		float releaseDisk = expntl(tDisk[pTask->type]);
 
@@ -350,16 +349,16 @@ void main(int argc, char** argv) {
 
 		            	pTask->diskAccess = TRUE;
 		          	}
-		          	break;
+		        break;
 		        case 11 : 
-		        	printf("Case 11:: Disco1::Release.\n");
+		        	//printf("Case 11:: Disco1::Release.\n");
 					release("Disco1", i);
 					schedule(8, 0.0, i);
-					break;
+				break;
 
 		        /*  centro de serviço = Disco2 */
 		        case 14 :
-		        	printf("Case 14:: Disco2::Entrada.\n");
+		        	//printf("Case 14:: Disco2::Entrada.\n");
 		        	if(request("Disco2", Event, i, 0) == 0) {
 		        		float releaseDisk = expntl(tDisk[pTask->type]);
 
@@ -368,16 +367,16 @@ void main(int argc, char** argv) {
 	 
 		            	pTask->diskAccess = TRUE;
 		          	}
-		          	break;
+		        break;
 		        case 15 : 
-		        	printf("Case 15:: Disco2::Release.\n");
+		        	//printf("Case 15:: Disco2::Release.\n");
 					release("Disco2", i);
 					schedule(12, 0.0, i);
-					break;
+				break;
 
 		        /*  centro de serviço = Disco3 */
 		        case 18 : 
-		        	printf("Case 18:: Disco3::Entrada.\n");
+		        	//printf("Case 18:: Disco3::Entrada.\n");
 		        	if(request("Disco3", Event, i, 0) == 0) {
 		        		float releaseDisk = expntl(tDisk[pTask->type]);
 
@@ -386,28 +385,28 @@ void main(int argc, char** argv) {
 	 
 		            	pTask->diskAccess = TRUE;
 		          	}
-		          	break;
+		        break;
 		        case 19 : 
-		        	printf("Case 19:: Disco3::Release.\n");
+		        	//printf("Case 19:: Disco3::Release.\n");
 					release("Disco3", i);
 					schedule(16, 0.0, i);
-					break;
+				break;
 			}
 		}
 
 
-		/* gera o relatorio da simulacao */
-	fprintf(saida,"TempoSimulado: %f\n", time() );
+			/* gera o relatorio da simulacao */
+		fprintf(saida,"TempoSimulado: %f\n", time());
 
-	fprintf(saida,"Utilizacao (\"Escalonador\") = %g\n", utilizacao_recurso("Escalonador"));
-	fprintf(saida,"\nUtilizacao (\"CPU0\") = %g\n", utilizacao_recurso("CPU0"));
-	fprintf(saida,"Utilizacao (\"Disco0\") = %g\n", utilizacao_recurso("Disco0"));
-	fprintf(saida,"\nUtilizacao (\"CPU1\") = %g\n", utilizacao_recurso("CPU1"));
-	fprintf(saida,"Utilizacao (\"Disco1\") = %g\n", utilizacao_recurso("Disco1"));
-	fprintf(saida,"\nUtilizacao (\"CPU2\") = %g\n", utilizacao_recurso("CPU2"));
-	fprintf(saida,"Utilizacao (\"Disco2\") = %g\n", utilizacao_recurso("Disco2"));
-	fprintf(saida,"\nUtilizacao (\"CPU3\") = %g\n", utilizacao_recurso("CPU3"));
-	fprintf(saida,"Utilizacao (\"Disco3\") = %g\n", utilizacao_recurso("Disco3"));
+		fprintf(saida,"Utilizacao (\"Escalonador\") = %g\n", utilizacao_recurso("Escalonador"));
+		fprintf(saida,"\nUtilizacao (\"CPU0\") = %g\n", utilizacao_recurso("CPU0"));
+		fprintf(saida,"Utilizacao (\"Disco0\") = %g\n", utilizacao_recurso("Disco0"));
+		fprintf(saida,"\nUtilizacao (\"CPU1\") = %g\n", utilizacao_recurso("CPU1"));
+		fprintf(saida,"Utilizacao (\"Disco1\") = %g\n", utilizacao_recurso("Disco1"));
+		fprintf(saida,"\nUtilizacao (\"CPU2\") = %g\n", utilizacao_recurso("CPU2"));
+		fprintf(saida,"Utilizacao (\"Disco2\") = %g\n", utilizacao_recurso("Disco2"));
+		fprintf(saida,"\nUtilizacao (\"CPU3\") = %g\n", utilizacao_recurso("CPU3"));
+		fprintf(saida,"Utilizacao (\"Disco3\") = %g\n", utilizacao_recurso("Disco3"));
 
 		fclose(saida);
 

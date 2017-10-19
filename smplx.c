@@ -913,12 +913,21 @@ void cause(int *evento, int *token)
                     *aux;
  double tempo_cabeca_lista_eventos = 0.0;
 
-  *token = lista_eventos_futuros->num_token;
-  *evento = lista_eventos_futuros->num_evento;
-  clock_simulacao = lista_eventos_futuros->tempo_ocorrencia;
-  aux = lista_eventos_futuros;
-  lista_eventos_futuros = lista_eventos_futuros->prox_lista_eventos; 
-  free(aux);                  
+ //printf("cause::Entrou:: evento %d, token %d\n", *evento, *token);
+ 
+ if(lista_eventos_futuros != NULL) {
+    *token = lista_eventos_futuros->num_token;
+    //printf("cause:: Get next token\n");
+    *evento = lista_eventos_futuros->num_evento;
+  
+
+    //printf("cause::After:: get next event %d, token %d\n", *evento, *token);
+    clock_simulacao = lista_eventos_futuros->tempo_ocorrencia;
+    aux = lista_eventos_futuros;
+    lista_eventos_futuros = lista_eventos_futuros->prox_lista_eventos; 
+    free(aux); 
+    //printf("cause::Saída\n");  
+  }              
 }
 /* ------------------------------------------------------------------------------------------------- */
 

@@ -1,0 +1,14 @@
+TempoSimulado: 169.932975
+Utilizacao ("Escalonador") = 0.768976
+
+Utilizacao ("CPU0") = 0.373431
+Utilizacao ("Disco0") = 0.118921
+
+Utilizacao ("CPU1") = 0.317256
+Utilizacao ("Disco1") = 0.225064
+
+Utilizacao ("CPU2") = 0.134279
+Utilizacao ("Disco2") = 0.00124954
+
+Utilizacao ("CPU3") = 0.432319
+Utilizacao ("Disco3") = 0.405713
