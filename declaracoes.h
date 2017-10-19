@@ -84,6 +84,8 @@ double clock_simulacao, /* clock da simulacao - determina o progresso da simulac
       start,       /* intervalo de tempo da simulacao - utiliza no caso do reset     */
       clock_atual; /* utilizada na rotina cause - verificar se precisa ser global    */
 
+int numEvents = 0;
+
       
 /*  -------------- ponteiros ------------------------------------------------------------------------*/
 

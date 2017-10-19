@@ -53,7 +53,7 @@ void put_elm( int );
 void schedule( int, double, int );
 
 /*---------------------------  CAUSE EVENT  --------------------------*/
-void cause(int*, int* );
+int cause(int*, int* );
 
 /*--------------------------  RETURN TIME  ---------------------------*/
 double time(void);

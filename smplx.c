@@ -465,6 +465,7 @@ void insere_lista_eventos_futuros(int num_evento, double te, int token)
  }
    
    /* insere os dados no no alocado */
+  numEvents++; printf("insere_lista_eventos_futuros:: numEvents %d\n", numEvents);
   ponteiro_lista_eventos->tempo_ocorrencia = te + clock_simulacao; 
   
   ponteiro_lista_eventos->num_evento = num_evento;
@@ -522,6 +523,7 @@ void insere_lista_eventos_futuros(int num_evento, double te, int token)
 
 void release(char *nome_recurso,int token)
 {
+  printf("release:: nome_recurso %s token %d\n", nome_recurso, token);
  tipo_cabecalho *ponteiro_cab, /* ponteiros para percorrer o cabecalho */
                 *auxiliar;
  tipo_servidor_recursos *ponteiro_serv_rec;
@@ -542,7 +544,7 @@ void release(char *nome_recurso,int token)
                 
   
  if (ponteiro_cab == NULL)
-   erro("Rotina: release() - Erro: recurso nao encontrado para ser liberado");
+   erro("Rotina: release() - Erro1: recurso nao encontrado para ser liberado");
    
    
  /*recurso encontrado - busca pelo servidor associado ao token 
@@ -554,7 +556,7 @@ void release(char *nome_recurso,int token)
    ponteiro_serv_rec = ponteiro_serv_rec->prox_servidor_recursos;
  
  if (ponteiro_serv_rec == NULL) /* nao existe servidor do recurso associado ao token */
-   erro("Rotina: release() - Erro: nao existe servidor associado ao token");
+   erro("Rotina: release() - Erro2: nao existe servidor associado ao token");
    
  /* servidor encontrado - sera liberado - o no permanece, os dados sao apagados */
  
@@ -608,7 +610,7 @@ void release(char *nome_recurso,int token)
     /* atualiza campos da fila de eventos para a lista de eventos futuros do processo */
     ponteiro_lista_eventos = aloca_mem_lista_eventos_futuros();
     if (ponteiro_lista_eventos == NULL)
-      erro("Rotina: release() - Erro: alocar memoria para a lista de eventos futuros");
+      erro("Rotina: release() - Erro3: alocar memoria para a lista de eventos futuros");
     
     /*ponteiro_lista_eventos->ident_processo = proc_local;*/
     
@@ -907,13 +909,12 @@ double tempo_cabeca_lista_eventos_futuros(void)
    ------------------------------------------------------------------------------------------------- */  
 
 
-void cause(int *evento, int *token)
+int cause(int *evento, int *token)
 {
  tipo_lista_eventos *ponteiro_lista_eventos, 
                     *aux;
  double tempo_cabeca_lista_eventos = 0.0;
 
- //printf("cause::Entrou:: evento %d, token %d\n", *evento, *token);
  
  if(lista_eventos_futuros != NULL) {
     *token = lista_eventos_futuros->num_token;
@@ -925,9 +926,14 @@ void cause(int *evento, int *token)
     clock_simulacao = lista_eventos_futuros->tempo_ocorrencia;
     aux = lista_eventos_futuros;
     lista_eventos_futuros = lista_eventos_futuros->prox_lista_eventos; 
+    numEvents--;
+    printf("cause::Entrou:: evento %d, token %d, numEvents %d\n", *evento, *token, numEvents);
     free(aux); 
     //printf("cause::Saída\n");  
-  }              
+  }
+  else return -1;
+
+  return 0;             
 }
 /* ------------------------------------------------------------------------------------------------- */
 
